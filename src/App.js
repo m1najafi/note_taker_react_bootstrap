@@ -11,13 +11,16 @@ import Container from 'react-bootstrap/Container'
 import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Form from 'react-bootstrap/Form'
+import { FaPlusSquare } from 'react-icons/fa';
+import {IconContext} from "react-icons"
+import Collapse from 'react-bootstrap/Collapse'
 
 class ContactRow extends React.Component {
   render() {
     return (
       <tr>
-        <td>{this.props.contact.timestamp}</td>
         <td>{this.props.contact.Note}</td>
+        <td>{this.props.contact.timestamp}</td>
       </tr>
     );
   }
@@ -25,7 +28,7 @@ class ContactRow extends React.Component {
 
 class ContactTable extends React.Component {
   convert_time(contact) {
-    return {timestamp:(new Date(contact.timestamp*1000).toISOString()), Note:contact.Note}
+    return {timestamp:(new Date(contact.timestamp*1000).toLocaleDateString("en-US")), Note:contact.Note}
   }
   render() {
     var rows = [];
@@ -36,8 +39,8 @@ class ContactTable extends React.Component {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>TimeStamp</th>
             <th>Note</th>
+            <th>Date</th>
           </tr>
         </thead>
         <tbody>{rows}</tbody>
@@ -52,6 +55,7 @@ export default class FormExample extends Component {
     this.state = {
       all_notes: [],
       note: '',
+      open: false,
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.getNotes = this.getNotes.bind(this);
@@ -65,6 +69,7 @@ export default class FormExample extends Component {
       'note_text': note}
     ).then((response) => {
       this.getNotes(event);
+      this.setState({open: false})
       console.log(response);
 }, (error) => {
   console.log(error);
@@ -72,7 +77,9 @@ export default class FormExample extends Component {
   }
 
   async getNotes(event) {
-    event.preventDefault();
+    if (event){
+      event.preventDefault();
+    }
     await axios.get(
       'https://ahidfnv1wk.execute-api.us-west-2.amazonaws.com/prod/SaveNotes/'
     ).then((response) => {
@@ -83,34 +90,38 @@ export default class FormExample extends Component {
 });
   }
 
+  componentDidMount(event) {
+    this.getNotes();
+  }
+
   render() {
     return (
       <Container>
-        <Form onSubmit={this.handleSubmit}>
-          <Form.Group controlId="formBasicText">
-          <Form.Label>Input note</Form.Label>
-          <Form.Control
-            type="text"
-            onChange={(event) => this.setState({note: event.target.value})}
-            value={this.state.note}
-            placeholder="Enter your note" />
-          <Form.Text className="text-muted">
-            Type in the note you want to be saved
-          </Form.Text>
-          </Form.Group>
-          <Button variant="primary" type="submit">
-            Save
+        <Button
+            variant="secondary"
+            onClick={() => this.setState({open: !this.state.open})}
+            aria-controls="example-collapse-text"
+            aria-expanded={this.state.open}
+          >
+            <FaPlusSquare/>
           </Button>
-        </Form>
-
-        <Form onSubmit={this.getNotes}>
-          <Button variant="primary" type="submit">
-            Show my notes
-          </Button>
-          <ContactTable
-            contacts={this.state.all_notes}
-          />
-        </Form>
+          <Collapse in={this.state.open}>
+            <Form onSubmit={this.handleSubmit}>
+              <Form.Group controlId="formBasicText">
+                <Form.Control
+                  type="text"
+                  onChange={(event) => this.setState({note: event.target.value})}
+                  value={this.state.note}
+                  placeholder="Enter your note" />
+              </Form.Group>
+            <Button variant="secondary" type="submit" size="lg">
+              Save
+            </Button>
+          </Form>
+        </Collapse>
+        <ContactTable
+          contacts={this.state.all_notes}
+        />
       </Container>
     );
   }
